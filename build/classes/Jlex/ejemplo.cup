@@ -1,0 +1,84 @@
+package Jlex;
+
+import java_cup.runtime.*;
+
+parser code {:
+	public static void main(String args[]) throws Exception{
+		new parser(new Yylex(System.in)).parse();
+	}
+	
+	 public void syntax_error(Symbol s){ 
+        System.out.println("Error Sintáctico en la Línea " + (s.left + 1) +
+        " Posicion "+s.right+ ". No se esperaba este componente: " +s.value+"."); 
+    } 
+
+    /**
+     * Método al que se llama automáticamente ante algún error sintáctico 
+     * en el que ya no es posible una recuperación de errores.
+     **/ 
+    public void unrecovered_syntax_error(Symbol s) { 
+        System.out.println("Error síntactico irrecuperable en la Línea " + 
+        (s.left+ 1)+ " Posicion "+s.right+". Componente " + s.value + 
+        " no reconocido."); 
+    }  
+	
+:}
+
+terminal LLA,LLC,MAS,MENOS,MULTIPLICACION,DIVISION,MOD,MENOR,MAYOR,MENORIGUAL,MAYORIGUAL,IGUAL,CA,CC;
+terminal AND,OR,NOT,EQ,NE,IN,NI,SET,PUTS,EXPR,IF,THEN,ELSE;	       
+terminal ELSEIF,SWITCH,DEFAULT,WHILE,CONTINUE,BREAK,FOR,INCR,PROC,RETURN;	       
+terminal ASIG,AGRUPACION,COMENTARIO,DIGITO,DIGITODECIMAL,IDENTIFICADOR,ERROR;
+
+non terminal ini,expr_list, expr_part, expr;
+non terminal DECLARACION, VALOR ,ACCEDERVALOR, AGRUPACIONES, OPERACION, OPERANDO, TEST, OPERRELACIONAL;
+non terminal INSTRIF,INSTSWITCH,INSTRCASE,CASE ,INSTRWHILE,INSTRFOR, INSTRPROC, ARGUMENTOS;
+non terminal EXPRAGRUPADA;
+
+start with ini;
+ini ::= expr_list;
+expr_list ::= expr expr_list | expr ;
+expr_part ::= expr:e {: System.out.println(" = "+e+";"); :} ;
+
+expr      ::= 	DECLARACION	|	ACCEDERVALOR	|		
+				COMENTARIO	|	AGRUPACIONES | IDENTIFICADOR | INSTRIF | INSTSWITCH	|
+				INSTRWHILE	|	INSTRFOR |	INSTRPROC;
+			
+VALOR ::= ASIG IDENTIFICADOR | DIGITO | IDENTIFICADOR;
+
+DECLARACION ::= SET IDENTIFICADOR VALOR;
+
+ACCEDERVALOR ::= PUTS ASIG IDENTIFICADOR;
+ 
+AGRUPACIONES ::= SET IDENTIFICADOR AGRUPACION	|
+				 PUTS AGRUPACION	|
+				 PUTS LLA EXPRAGRUPADA LLC |
+				 SET IDENTIFICADOR CA EXPR OPERACION CC ;
+
+				 
+OPERACION ::= 	OPERANDO MAS OPERANDO	|	OPERANDO MENOS OPERANDO	|	OPERANDO MULTIPLICACION OPERANDO	|	OPERANDO DIVISION OPERANDO	|	OPERANDO MOD OPERANDO	;
+				
+OPERANDO ::= ASIG IDENTIFICADOR | DIGITO;
+
+TEST ::= OPERANDO OPERRELACIONAL OPERANDO;
+
+OPERRELACIONAL ::=  IGUAL 	|	MENOR	|	MAYORIGUAL	|	MAYOR	|	MENORIGUAL	|	EQ	|	NE	|	IN	|	NI;
+
+
+INSTRIF ::= IF LLA TEST LLC LLA expr_list LLC | IF LLA TEST LLC LLA expr_list LLC ELSE LLA expr_list LLC {: System.out.println("Sentencia analizada correctamente. Sin errores."); :};
+
+INSTSWITCH ::= SWITCH IDENTIFICADOR LLA INSTRCASE DEFAULT LLA expr_list LLC LLC {: System.out.println("Sentencia analizada correctamente. Sin errores."); :};	
+
+CASE ::=	AGRUPACION	LLA expr_list LLC {: System.out.println("Sentencia analizada correctamente. Sin errores."); :};
+
+INSTRCASE ::= CASE | CASE INSTRCASE {: System.out.println("Sentencia analizada correctamente. Sin errores."); :};
+
+INSTRWHILE ::= WHILE LLA TEST LLC LLA expr_list LLC {: System.out.println("Sentencia analizada correctamente. Sin errores."); :};
+
+INSTRFOR ::= FOR LLA DECLARACION LLC LLA TEST LLC LLA INCR IDENTIFICADOR LLC LLA expr_list LLC {: System.out.println("Sentencia analizada correctamente. Sin errores."); :}
+				;
+
+INSTRPROC ::= PROC IDENTIFICADOR LLA ARGUMENTOS LLC LLA expr_list RETURN VALOR LLC {: System.out.println("Sentencia analizada correctamente. Sin errores."); :};
+
+ARGUMENTOS ::= IDENTIFICADOR | IDENTIFICADOR ARGUMENTOS;
+
+EXPRAGRUPADA ::= expr_list  ;
